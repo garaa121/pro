@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrerte Deltakere</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #71b7e6, #9b59b6);
+        }
+        .container {
+            background-color: #fff;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
+            width: 100%;
+            text-align: left;
+        }
+        h1, h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        h2 {
+            margin: 1.5rem 0;
+            border-bottom: 2px solid #9b59b6;
+            padding-bottom: 0.5rem;
+        }
+        #searchContainer {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 2rem; /* Gir litt plass under søkefeltet */
+        }
+        #searchInput {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px; /* Bestemmer bredden på søkefeltet */
+            margin-right: 10px; /* Plass mellom søkefelt og knapp */
+        }
+        #searchButton {
+            padding: 0.5rem 1rem;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #searchButton:hover {
+            background-color: #0056b3;
+        }
+        #checkedInList, #checkedOutList {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        p {
+            background: #f1f1f1;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            width: 80%;
+        }
+        .check-in, .check-out, .delete {
+            padding: 0.3rem 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-left: 10px;
+        }
+        .check-in {
+            background-color: rgba(0, 255, 0, 0.2);
+            color: green;
+            border: 1px solid green;
+        }
+        .check-out {
+            background-color: rgba(255, 0, 0, 0.2);
+            color: red;
+            border: 1px solid red;
+        }
+        .delete {
+            background-color: rgba(255, 165, 0, 0.2);
+            color: orange;
+            border: 1px solid orange;
+        }
+        .check-in:hover, .check-out:hover, .delete:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registrerte Deltakere</h1>
+        <div id="searchContainer">
+            <input type="text" id="searchInput" placeholder="Søk med navn eller mobilnummer">
+            <button id="searchButton">Søk</button>
+        </div>
+
+        <div id="checkedOutList">
+            <h2>Sjekket Ut</h2>
+            <div></div>
+        </div>
+
+        <div id="checkedInList">
+            <h2>Sjekket Inn</h2>
+            <div></div>
+        </div>
+
+        <h2>Alle Deltakere</h2>
+        <div id="registrantsList"></div>
+    </div>
+
+    <script>
+        function toggleCheckIn(index) {
+            const registrants = JSON.parse(localStorage.getItem('registrants')) || [];
+            registrants[index].checkedIn = !registrants[index].checkedIn;
+            localStorage.setItem('registrants', JSON.stringify(registrants));
+            displayRegistrants();
+        }
+
+        function deleteRegistrant(index) {
+            const registrants = JSON.parse(localStorage.getItem('registrants')) || [];
+            registrants.splice(index, 1);
+            localStorage.setItem('registrants', JSON.stringify(registrants));
+            displayRegistrants();
+        }
+
+        function displayRegistrants() {
+            const registrants = JSON.parse(localStorage.getItem('registrants')) || [];
+            const checkedInList = document.getElementById('checkedInList').querySelector('div');
+            const checkedOutList = document.getElementById('checkedOutList').querySelector('div');
+            const registrantsList = document.getElementById('registrantsList');
+
+            checkedInList.innerHTML = '';
+            checkedOutList.innerHTML = '';
+            registrantsList.innerHTML = ''; // Tømmer listen over alle deltakere
+
+            registrants.forEach((r, index) => {
+                const participantHTML = `<p>${r.fullname} - ${r.mobile} 
+                    <span class="${r.checkedIn ? 'check-in' : 'check-out'}" onclick="toggleCheckIn(${index})">
+                        ${r.checkedIn ? 'Sjekk Ut' : 'Sjekk Inn'}
+                    </span>
+                    <span class="delete" onclick="deleteRegistrant(${index})">Slett</span>
+                </p>`;
+                
+                if (r.checkedIn) {
+                    checkedInList.innerHTML += participantHTML;
+                } else {
+                    checkedOutList.innerHTML += participantHTML;
+                }
+                
+                // Legg til deltakerne i listen over alle deltakere
+                registrantsList.innerHTML += participantHTML;
+            });
+        }
+
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const registrants = JSON.parse(localStorage.getItem('registrants')) || [];
+            const results = registrants.filter(r => 
+                r.fullname.toLowerCase().includes(searchTerm) || r.mobile.includes(searchTerm)
+            );
+
+            const registrantsList = document.getElementById('registrantsList');
+            registrantsList.innerHTML = results.length > 0 ? 
+                results.map((r, index) => 
+                    `<p>${r.fullname} - ${r.mobile} 
+                    <span class="${r.checkedIn ? 'check-in' : 'check-out'}" onclick="toggleCheckIn(${index})">
+                        ${r.checkedIn ? 'Sjekk Ut' : 'Sjekk Inn'}
+                    </span>
+                    <span class="delete" onclick="deleteRegistrant(${index})">Slett</span>
+                    </p>`
+                ).join('') : 
+                '<p>Ingen resultater funnet.</p>';
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            displayRegistrants();
+        });
+    </script>
+</body>
+</html>
